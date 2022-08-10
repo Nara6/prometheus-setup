@@ -1,0 +1,47 @@
+---
+- hosts: grafana
+  tasks: 
+    - name: Make Directory 
+      ansible.builtin.file:
+        path: /etc/prometheus
+        state: directory
+        mode: '0755' 
+    - name: Make Directory for lib
+      ansible.builtin.file:
+        path: /var/lib/prometheus
+        state: directory
+        mode: '0755'
+    - name: Wget package
+      ansible.builtin.get_url:
+        url: https://github.com/prometheus/prometheus/releases/download/v2.31.0/prometheus-2.31.0.linux-amd64.tar.gz
+        dest: /root
+        mode: '0440'
+    - name: Unarchive
+      command: "tar -xvf /root/prometheus-2.31.0.linux-amd64.tar.gz"
+    - name: Move file to usr
+      command: "mv /root/prometheus-2.31.0.linux-amd64/prometheus /usr/local/bin/"
+    - name: Move file to etc directory
+      command: "sudo mv /root/prometheus-2.31.0.linux-amd64/consoles/ /root/prometheus-2.31.0.linux-amd64/console_libraries/ /etc/prometheus/"
+    - name: Move file prometheus config to etc directory
+      command: "sudo mv /root/prometheus-2.31.0.linux-amd64/prometheus.yml /etc/prometheus/prometheus.yml"
+    - name: Configure System group and user
+      command: "sudo groupadd --system prometheus"
+    - name: Group add user
+      command: "sudo useradd -s /sbin/nologin --system -g prometheus prometheus"
+    - name: Chown prometheus
+      command: "sudo chown -R prometheus:prometheus /etc/prometheus/ /var/lib/prometheus/"
+    - name: Chmod
+      command: "sudo chmod -R 775 /etc/prometheus/ /var/lib/prometheus/"
+    - name: Clone a github repository
+      ansible.builtin.git:
+        repo: https://github.com/Nara6/Grafana.git
+        dest: /root/prometheus-service
+        clone: yes
+        update: yes
+    - name: Move file service
+      command: "sudo mv /root/prometheus-service/prometheus.service /etc/systemd/system/prometheus.service"
+    - name: Start service 
+      command: "sudo systemctl start prometheus"
+    - name: Enable prometheus
+      command: "sudo systemctl enable prometheus"
+...
