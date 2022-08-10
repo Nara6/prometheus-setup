@@ -1,0 +1,29 @@
+---
+- hosts: grafana
+  tasks: 
+    - name: Wget package
+      ansible.builtin.get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-amd64.tar.gz
+        dest: /root
+        mode: '0440'
+    - name: Unarchive
+      command: "tar -xvf /root/node_exporter-1.3.1.linux-amd64.tar.gz"
+    - name: Extract Node Exporter and move binary
+      command: "sudo cp /root/node_exporter-1.3.1.linux-amd64/node_exporter /usr/local/bin"
+    - name: Create Node Exporter User
+      command: "sudo useradd --no-create-home --shell /bin/false node_exporter"
+    - name: Chmod
+      command: "sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter"
+    - name: Clone a github repository
+      ansible.builtin.git:
+        repo: https://github.com/Nara6/node-exporter.git
+        dest: /root/node_exporter-service
+        clone: yes
+        update: yes
+    - name: Create Node Exporter service
+      command: "sudo mv /root/node_exporter-service/node_exporter.service /etc/systemd/system/node_exporter.service"
+    - name: Reload Node Exporter
+      command: "sudo systemctl daemon-reload"
+    - name: Start Node Exporter service
+      command: "sudo systemctl start node_exporter"
+  ...
